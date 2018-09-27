@@ -1,0 +1,3 @@
+//Sine commander client
+//CMakeLists
+

@@ -1,0 +1,6 @@
+double amp
+double freq
+---
+double g_sin_cmd.data
+
+//compile this
