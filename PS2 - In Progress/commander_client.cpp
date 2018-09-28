@@ -12,8 +12,8 @@ int main(int argc, char **argv) {
     ros::ServiceClient client = n.serviceClient<example_ros_service::CommanderServiceMsg>("sinusoidal_command");
     example_ros_service::CommanderServiceMsg srv;
     double in_amp;
-    double in_freq;   
-    cout<<endl;
+    double in_freq; 
+while(ros::ok()) {  
     cout<<"Enter an amplitude: ";
     cin>>in_amp;
     cout<<"Enter a frequency (Hz): ";
@@ -21,9 +21,10 @@ int main(int argc, char **argv) {
     srv.request.amp = in_amp; 
     srv.request.freq = in_freq;    
     //while (ros::ok()) {
-      while (client.call(srv)) {
+      //while (client.call(srv)) {
         cout<<"Sine Command = " <<srv.response.sin_cmd <<endl;
-      }
+      //}
     //}
-    //return 0;
+}
+    return 0;
 }
