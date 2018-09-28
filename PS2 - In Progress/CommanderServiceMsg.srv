@@ -1,6 +1,6 @@
-double amp
-double freq
+int64 amp
+int64 freq
 ---
-double g_sin_cmd.data
+int64 sin_cmd
 
-//compile this
+
