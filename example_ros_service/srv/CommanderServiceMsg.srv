@@ -1,6 +1,5 @@
-int64 amp
-int64 freq
+int32 amp
+int32 freq
 ---
-int64 sin_cmd
-
+bool received
 

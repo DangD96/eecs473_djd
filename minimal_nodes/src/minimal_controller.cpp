@@ -8,7 +8,7 @@
 std_msgs::Float64 g_velocity;
 std_msgs::Float64 g_vel_cmd;
 std_msgs::Float64 g_force; // this one does not need to be global... 
-std_msgs::Float64 g_sin_cmd;
+//std_msgs::Float64 g_sin_cmd;
 
 void myCallbackVelocity(const std_msgs::Float64& message_holder) {
     // check for data on topic "velocity" 
@@ -25,11 +25,11 @@ void myCallbackVelCmd(const std_msgs::Float64& message_holder) {
 }
 
 //make a 3rd CB function to respond to sinusoidal command
-void myCallbackSinCmd(const std_msgs::Float64& message_holder) {
+/*void myCallbackSinCmd(const std_msgs::Float64& message_holder) {
     // check for data on topic "sin_cmd"
     ROS_INFO("received sinusoidal command value is: %f", message_holder.data);
     g_sin_cmd.data = message_holder.data; // post received data in global var
-}
+}*/
 
 int main(int argc, char **argv) {
     ros::init(argc, argv, "minimal_controller"); //name this node 
@@ -40,7 +40,7 @@ int main(int argc, char **argv) {
     ros::Subscriber my_subscriber_object2 = nh.subscribe("vel_cmd", 1, myCallbackVelCmd);
 
     //create a 3rd subscriber for sensing the sinusoidal velocity command
-    ros::Subscriber my_subscriber_object3 = nh.subscribe("sin_cmd", 1, myCallbackSinCmd);
+    //ros::Subscriber my_subscriber_object3 = nh.subscribe("sin_cmd", 1, myCallbackSinCmd);
 
     //publish a force command computed by this controller; 
     ros::Publisher my_publisher_object = nh.advertise<std_msgs::Float64>("force_cmd", 1);
@@ -51,14 +51,14 @@ int main(int argc, char **argv) {
     g_velocity.data = 0.0; //initialize velocity to zero 
     g_force.data = 0.0; // initialize force to 0; will get updated by callback 
     g_vel_cmd.data = 0.0; // init velocity command to zero 
-    g_sin_cmd.data = 0.0; // init sinusoidal velocity command to zero
+    //g_sin_cmd.data = 0.0; // init sinusoidal velocity command to zero
 
     double vel_err = 0.0; // velocity error 
     // enter the main loop: get velocity state and velocity commands 
     // compute command force to get system velocity to match velocity command 
     // publish this force for use by the complementary simulator 
     while (ros::ok()) {
-       vel_err = g_sin_cmd.data - g_velocity.data; // using sinusoidal command - compute error btwn
+       vel_err = g_vel_cmd.data - g_velocity.data; //compute error btwn
         //desired and actual velocities 
         g_force.data = Kv*vel_err; //proportional-only velocity-error feedback defines commanded 
         //force 

@@ -12,6 +12,7 @@ int main(int argc, char **argv) {
     ros::NodeHandle n;
     ros::ServiceClient client = n.serviceClient<example_ros_service::CommanderServiceMsg>("sinusoidal_command");
     example_ros_service::CommanderServiceMsg srv;
+    bool received; 
     double in_amp;
     double in_freq; 
     while(ros::ok()) { 
@@ -21,7 +22,10 @@ int main(int argc, char **argv) {
       cin>>in_freq;
       srv.request.amp = in_amp; 
       srv.request.freq = in_freq;       
-      while (client.call(srv)) {        
+      if (client.call(srv)) {
+        if(srv.response.received) {
+	  continue;         
+        }        
       }
     }
     return 0;
