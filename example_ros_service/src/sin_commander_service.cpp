@@ -7,7 +7,6 @@
 std_msgs::Float64 g_velocity;
 std_msgs::Float64 g_vel_cmd;
 std_msgs::Float64 g_force;
-//std_msgs::Float64 g_sin_cmd;
 #include <example_ros_service/CommanderServiceMsg.h>
 #include <iostream>
 #include <string>
