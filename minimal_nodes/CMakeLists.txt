@@ -118,7 +118,7 @@ target_link_libraries(sleepy_minimal_publisher  ${catkin_LIBRARIES} )
 target_link_libraries(minimal_subscriber  ${catkin_LIBRARIES} )
 target_link_libraries(minimal_simulator  ${catkin_LIBRARIES} )
 target_link_libraries(minimal_controller  ${catkin_LIBRARIES} )
-target_link_libraries(sin_commander      ${catkin_LIBRARIES} )
+target_link_libraries(sin_commander       ${catkin_LIBRARIES} )
 #############
 ## Install ##
 #############
