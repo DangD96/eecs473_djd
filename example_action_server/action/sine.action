@@ -1,0 +1,10 @@
+#goal
+int32 amp
+int32 freq
+int32 cycles
+---
+#result
+int32 output
+---
+#feedback
+int32 fdbk
