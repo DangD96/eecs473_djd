@@ -2,6 +2,11 @@
 #the lines with the hash signs are merely comments
 #goal, result and feedback are defined by this fixed order, and separated by 3 hyphens
 int32 input
+
+#I modified the .h file to have these three inputs too
+int32 amp
+int32 freq
+int32 cycles
 ---
 #result definition
 int32 output
