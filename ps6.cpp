@@ -2,8 +2,10 @@
 // 11/6/18
 // ps6.cpp
 
-// add node in CMakeLists
-// add build and runtime dependencies for <osrf_gear> in package.xml
+// roslaunch osrf_gear sample_environment.launch
+// rosservice call /ariac/start_competition
+// rosservice call /ariac/conveyor/control "power: 100"
+// rosservice call /ariac/drone "shipment_type: order_0_shipment_0"
 
 #include <ros/ros.h>
 #include <std_srvs/Trigger.h> 
@@ -23,7 +25,8 @@ void cam2CB(const osrf_gear::LogicalCameraImage& message_holder)
 		ROS_INFO_STREAM("Image from cam2: "<<message_holder<<endl);
 		g_cam2_data = message_holder;
 		g_take_new_snapshot=false;
-} 
+	}
+}
 
 
 int main(int argc, char **argv) {
@@ -46,7 +49,7 @@ int main(int argc, char **argv) {
 
 	
 	// Start conveyor belt
-	ros::ServiceClient conveyor_client = n.serviceClient<osrf_gear::ConveyorBeltControl>("/ariac/conveyor_control");
+	ros::ServiceClient conveyor_client = n.serviceClient<osrf_gear::ConveyorBeltControl>("/ariac/conveyor/control");
     osrf_gear::ConveyorBeltControl conveyor_srv;    
     conveyor_srv.request.power = 100.0;
     conveyor_srv.response.success=false;
@@ -68,7 +71,7 @@ int main(int argc, char **argv) {
 	
 	
 	
-
+/*
 	// Stop belt and wait for 5 seconds (pretend to load the box)	
 	conveyor_srv.request.power = 0;
     conveyor_srv.response.success=false;
@@ -89,7 +92,7 @@ int main(int argc, char **argv) {
 		conveyor_client.call(conveyor_srv);
 		ros::Duration(0.5).sleep();
 	}
-	ROS_INFO("Successfully turned conveyor belt back on");
+	ROS_INFO("Successfully turned conveyor belt back on");*/
 	
 	
 	 
