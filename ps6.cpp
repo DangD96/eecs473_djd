@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 	
 	
 /*
-	// Stop belt and wait for 5 seconds (pretend to load the box)	
+	// Stop belt and wait for 5 seconds	
 	conveyor_srv.request.power = 0;
     conveyor_srv.response.success=false;
 	while(!conveyor_srv.response.success) {
@@ -81,6 +81,7 @@ int main(int argc, char **argv) {
 		ros::Duration(0.5).sleep();
 	}
 	ROS_INFO("Successfully stopped conveyor belt");
+	ROS_INFO("Waiting for 5 seconds...");
 	ros::Duration(5).sleep();
 	
 	
@@ -88,11 +89,11 @@ int main(int argc, char **argv) {
 	conveyor_srv.request.power = 100.0;
     conveyor_srv.response.success=false;
 	while(!conveyor_srv.response.success) {
-		ROS_WARN("Not successful starting conveyor yet...");
+		ROS_WARN("Not successful restarting conveyor yet...");
 		conveyor_client.call(conveyor_srv);
 		ros::Duration(0.5).sleep();
 	}
-	ROS_INFO("Successfully turned conveyor belt back on");*/
+	ROS_INFO("Successfully restarted conveyor");*/
 	
 	
 	 
@@ -108,7 +109,11 @@ int main(int argc, char **argv) {
 		drone_client.call(drone_srv);
 		ros::Duration(0.5).sleep();
 	}
-	ROS_INFO("Got success response from drone service");
+	ROS_INFO("Got success response from drone service");	
+	ROS_INFO("Shipment has been picked up");
+	
+	
+	// Stop conveyor belt
 
     return 0;
 }
