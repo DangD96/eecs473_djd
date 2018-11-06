@@ -72,7 +72,7 @@ int main(int argc, char **argv) {
 	
 	while(g_I_see_a_box) {
 		g_take_new_snapshot=true;
-		z_value = g_cam2_data.models.z; //check this
+		z_value = g_cam2_data.models.pose.position.z; 
 		
 		if(z_value < 0 + 0.05 || z_value > 0 - 0.05) {
 			// Stop belt and wait for 5 seconds	
@@ -124,7 +124,7 @@ int main(int argc, char **argv) {
 		ros::Duration(0.5).sleep();
 	}
 	ROS_INFO("Successfully stopped conveyor belt");	
-	ROS_INFO("Finished: According to logical camera, z-value of box when conveyor halted was: "<<g_cam2.data.z<<endl); //check this 
+	ROS_INFO("Finished: According to logical camera, z-value of box when conveyor halted was: "<<g_cam2.data.models.pose.position.z<<endl); 
 	
     return 0;
 }
