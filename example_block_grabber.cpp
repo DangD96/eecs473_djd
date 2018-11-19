@@ -116,9 +116,9 @@ int main(int argc, char** argv) {
         //move to approach pose:
         ROS_INFO("moving to approach pose");
         tool_pose.pose.position.y = g_block_data.pose.position.y;
-        tool_pose.pose.position.z = g_block_data.pose.position.z;
+        //tool_pose.pose.position.y = g_block_data.pose.position.y;
         //tool_pose.pose.position.y=0.0; 
-        //tool_pose.pose.position.z = 0.05; //0.01;          
+        tool_pose.pose.position.z = 0.05; //0.01;          
         ROS_INFO("requesting plan to descend:");
         xformUtils.printPose(tool_pose);
         rtn_val = cart_motion_commander.plan_cartesian_traj_qprev_to_des_tool_pose(nsteps, arrival_time, tool_pose);
@@ -134,7 +134,7 @@ int main(int argc, char** argv) {
         ROS_INFO("moving to grasp pose");
         //lower tool to approach part to grasp
         //tool_pose.pose.position.y=0; 
-        tool_pose.pose.position.z = 0.0343; //block is 0.035 high      
+        tool_pose.pose.position.z = 0.0340; //block is 0.035 high      
 
         ROS_INFO("requesting plan to descend:");
         xformUtils.printPose(tool_pose);
@@ -173,8 +173,21 @@ int main(int argc, char** argv) {
 
 
 
-		//move block to my specified location
+		//move block to my specified location		
+		ROS_INFO("Moving to other location");
+        tool_pose.pose.position.y=0.5; 
+        //tool_pose.pose.position.z = 0.0340; //block is 0.035 high      
 
+        ROS_INFO("requesting plan to descend:");
+        xformUtils.printPose(tool_pose);
+        rtn_val = cart_motion_commander.plan_cartesian_traj_qprev_to_des_tool_pose(nsteps, arrival_time, tool_pose);
+        if (rtn_val == arm_motion_action::arm_interfaceResult::SUCCESS) {
+            ROS_INFO("successful plan; command execution of trajectory");
+            rtn_val = cart_motion_commander.execute_planned_traj();
+            ros::Duration(arrival_time + 0.2).sleep();
+        } else {
+            ROS_WARN("unsuccessful plan; rtn_code = %d", rtn_val);
+        }
 
 
 
