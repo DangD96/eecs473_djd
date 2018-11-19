@@ -1,3 +1,5 @@
+// David Dang djd122 11/19/18
+
 // example_block_grabber: 
 // wsn, Nov, 2018; 
 // illustrates use of a generic action client that communicates with
@@ -11,7 +13,7 @@
 
 //for manual gripper control,  rosrun cwru_sticky_fingers finger_control_dummy_node /sticky_finger/link6 false
 
-#include<ros/ros.h>
+#include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <arm_motion_action/arm_interfaceAction.h>
@@ -23,6 +25,20 @@
 #include <std_srvs/SetBool.h>
 using namespace std;
 
+geometry_msgs::PoseStamped g_block_data;
+
+
+void blockCB(const geometry_msgs::PoseStamped& message_holder) 
+{ 
+	g_block_data = message_holder;
+	ROS_INFO("Received block pose from OpenCV node");	
+}
+
+
+
+
+
+
 int main(int argc, char** argv) {
     ros::init(argc, argv, "example_arm_cart_move_ac"); // name this node 
     ros::NodeHandle nh; //standard ros node handle     
@@ -31,6 +47,9 @@ int main(int argc, char** argv) {
     ros::ServiceClient client = nh.serviceClient<std_srvs::SetBool>("/sticky_finger/link6");
     std_srvs::SetBool srv;
     srv.request.data = true;
+
+	//subscribe to block_pose topic 
+	ros::Subscriber block_pose_subscriber= nh.subscribe("block_pose",1,blockCB);
 
     Eigen::VectorXd joint_angles;
     Eigen::Vector3d dp_displacement;
@@ -96,8 +115,10 @@ int main(int argc, char** argv) {
         
         //move to approach pose:
         ROS_INFO("moving to approach pose");
-        tool_pose.pose.position.y=0.0; 
-        tool_pose.pose.position.z = 0.05; //0.01;          
+        tool_pose.pose.position.y = g_block_data.pose.position.y;
+        tool_pose.pose.position.z = g_block_data.pose.position.z;
+        //tool_pose.pose.position.y=0.0; 
+        //tool_pose.pose.position.z = 0.05; //0.01;          
         ROS_INFO("requesting plan to descend:");
         xformUtils.printPose(tool_pose);
         rtn_val = cart_motion_commander.plan_cartesian_traj_qprev_to_des_tool_pose(nsteps, arrival_time, tool_pose);
@@ -136,7 +157,7 @@ int main(int argc, char** argv) {
         }
 
 
-
+		//depart after enabling vacuum gripper
         ROS_INFO("requesting plan to depart with grasped object:");
         tool_pose.pose.position.z = 0.3;         
 
@@ -150,8 +171,15 @@ int main(int argc, char** argv) {
             ROS_WARN("unsuccessful plan; rtn_code = %d", rtn_val);
         }
 
-        //disable the vacuum gripper:
 
+
+		//move block to my specified location
+
+
+
+
+
+        //disable the vacuum gripper:
         srv.request.data = false;
         while (!client.call(srv) && ros::ok()) {
             ROS_INFO("Sending command to gripper...");

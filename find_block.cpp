@@ -1,3 +1,5 @@
+// David Dang djd122 11/19/18
+
 //get images from topic "simple_camera/image_raw"; remap, as desired;
 //search for red pixels;
 // convert (sufficiently) red pixels to white, all other pixels black
@@ -142,17 +144,23 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg){
 		double x_p = 0.5;
 		double y_p = 0.3;
 		double z_p = 0.5*BLOCK_HEIGHT;
-		
-        block_pose_.pose.position.x = (i_centroid-i_c)*scale_factor; 
-        block_pose_.pose.position.y = (j_centroid-j_c)*scale_factor; 
-        double theta=10.4; // degrees
+		double theta = 0.182; // radians
+		double x_table = (i_centroid-i_c)*scale_factor; //where the block is (x)
+		double y_table = (j_centroid-j_c)*scale_factor; //where the block is (y)
+		 
+        block_pose_.pose.position.x = x_table; 
+        block_pose_.pose.position.y = y_table; 
+       
         
         // need camera info to fill in x,y,and orientation x,y,z,w
         //geometry_msgs::Quaternion quat_est
         //quat_est = xformUtils.convertPlanarPsi2Quaternion(yaw_est);
         block_pose_.pose.orientation = xformUtils.convertPlanarPsi2Quaternion(theta); //not true, but legal
-        block_pose_publisher_.publish(block_pose_);
+        
+        //publish where the block is in (x,y) coordinates so robot can find it
+        block_pose_publisher_.publish(block_pose_);           
     }
+
 
 int main(int argc, char** argv) {
     ros::init(argc, argv, "red_pixel_finder");
