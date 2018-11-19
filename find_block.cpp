@@ -133,15 +133,19 @@ void ImageConverter::imageCb(const sensor_msgs::ImageConstPtr& msg){
         image_pub_.publish(cv_ptr->toImageMsg());
         
 		
-		// Transform block centroid from i,j to x,y coordinates
-		//double x_cen
-		//double y_cen
+		// Transform block centroid from i,j to x,y coordinates		
+		double i_c = 240; //480 x 640 --> pixel center
+		double j_c = 320;
 
-
-
-        block_pose_.pose.position.x = i_centroid; //not true, but legal
-        block_pose_.pose.position.y = j_centroid; //not true, but legal
-        double theta=0;
+		// ***See report djd122_ps7.pdf for my work deriving the values below***
+		double scale_factor = 0.003; // meters per pixel 
+		double x_p = 0.5;
+		double y_p = 0.3;
+		double z_p = 0.5*BLOCK_HEIGHT;
+		
+        block_pose_.pose.position.x = (i_centroid-i_c)*scale_factor; 
+        block_pose_.pose.position.y = (j_centroid-j_c)*scale_factor; 
+        double theta=10.4; // degrees
         
         // need camera info to fill in x,y,and orientation x,y,z,w
         //geometry_msgs::Quaternion quat_est
@@ -154,8 +158,6 @@ int main(int argc, char** argv) {
     ros::init(argc, argv, "red_pixel_finder");
     ros::NodeHandle n; //        
     ImageConverter ic(n); // instantiate object of class ImageConverter
-    //cout << "enter red ratio threshold: (e.g. 10) ";
-    //cin >> g_redratio;
     g_redratio= 10; //choose a threshold to define what is "red" enough
     ros::Duration timer(0.1);
     double x, y, z;
