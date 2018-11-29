@@ -2,6 +2,11 @@
 //unload_box_djd.cpp:
 // moves a box under camera, then removes sensed parts from box
 
+//roslaunch cwru_ariac_launch sample_environment.launch fill_demo_shipment:=true
+//rosrun kuka_move_as kuka_behavior_as2
+//rosrun conveyor_as conveyor_as
+//then run this node
+
 //use a RobotBehaviorInterface object to communicate with the robot behavior action server
 #include <robot_behavior_interface/RobotBehaviorInterface.h>
 
@@ -15,9 +20,17 @@
 #include <conveyor_as/ConveyorInterface.h>
 
 #include <std_srvs/Trigger.h>
+#include <osrf_gear/LogicalCameraImage.h>
 
 const double COMPETITION_TIMEOUT=500.0; // need to  know what this is for the finals;
 // want to ship out partial credit before time runs out!
+
+// variables for box camera and quality control sensor data
+osrf_gear::LogicalCameraImage g_box_cam1_data;
+osrf_gear::LogicalCameraImage g_quality_sensor1_data;
+
+bool g_take_new_snapshot=false;
+
 
 void model_to_part(osrf_gear::Model model, inventory_msgs::Part &part, unsigned short int location) {
     part.name = model.type;
@@ -25,11 +38,36 @@ void model_to_part(osrf_gear::Model model, inventory_msgs::Part &part, unsigned 
     part.location = location; //by default
 }
 
+
+void box_cam1CB(const osrf_gear::LogicalCameraImage& message_holder) 
+{ 
+	if(g_take_new_snapshot) {
+		ROS_INFO_STREAM("Image from box camera 1: "<<message_holder<<endl);
+		g_box_cam1_data = message_holder;
+		g_take_new_snapshot=false;
+	}
+}
+
+
+void q_sensor1CB(const osrf_gear::LogicalCameraImage& message_holder) 
+{ 
+	if(g_take_new_snapshot) {
+		ROS_INFO_STREAM("Image from quality sensor 1: "<<message_holder<<endl);
+		g_quality_sensor1_data = message_holder;
+		g_take_new_snapshot=false;
+	}
+}
+
+
 int main(int argc, char** argv) {
     // ROS set-ups:
     ros::init(argc, argv, "box_unloader"); //node name
     ros::NodeHandle nh; // create a node handle; need to pass this to the class constructor
     int ans;
+    
+    // subscribe to box camera and quality control sensor
+    ros::Subscriber box_cam1_subscriber_object= nh.subscribe("/ariac/box_camera_1",1,box_cam1CB);
+    ros::Subscriber quality_sensor1_subscriber_object= nh.subscribe("/ariac/quality_control_sensor_1",1,q_sensor1CB);
     
     // Start competition
     ros::ServiceClient startup_client = nh.serviceClient<std_srvs::Trigger>("/ariac/start_competition"); // service name in " "
@@ -118,17 +156,17 @@ int main(int argc, char** argv) {
         ROS_INFO("found bad part: ");
         ROS_INFO_STREAM(current_part<<endl);
         
+        g_take_new_snapshot=true; //check camera viewpoints
+        
+        ROS_INFO("Identifying name of bad part...");
+        
+        
         cout<<"enter 1 to attempt to remove bad part: "; //poor-man's breakpoint
         cin>>ans;  
         
         if(ans==1){      
-        	//XXX YOU should attempt to remove the defective part here...
-        	// see example, line 139, robotBehaviorInterface.pick_part_from_box();
-
     		//use the robot action server to acquire and dispose of the specified part in the box:
-    		status = robotBehaviorInterface.pick_part_from_box(current_part);
-    		
-    		
+    		status = robotBehaviorInterface.pick_part_from_box(current_part); //remove bad part    		
     	}
     }    
 
@@ -146,9 +184,8 @@ int main(int argc, char** argv) {
     }
 
 
-    // move robot to grasp and discard each part
-
 	//remove the remaining parts
+	ROS_INFO("Removing the remaining parts...");
 	
     //start w/ first remaining part
     
@@ -161,6 +198,7 @@ int main(int argc, char** argv) {
 
     //SHOULD REPEAT FOR ALL THE PARTS IN THE BOX
     //ALSO, WATCH OUT FOR NO PARTS IN THE BOX--ABOVE WILL CRASH
+ 
     
     //go to second remaining part
     
@@ -175,8 +213,4 @@ int main(int argc, char** argv) {
     	ROS_INFO("All remaining parts have been removed");
     	return 0;
     }
-    
-    //here's an oddity: this node runs to completion.  But sometimes, Linux complains bitterly about
-    // *** Error in `/home/wyatt/ros_ws/devel/lib/shipment_filler/unload_box': corrupted size vs. prev_size: 0x000000000227c7c0 ***
-    // don't know why.  But does not seem to matter.  If anyone figures this  out, please let me know.
 }
