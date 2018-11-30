@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
     
     // subscribe to box camera and quality control sensor
     ros::Subscriber box_cam1_subscriber_object= nh.subscribe("/ariac/box_camera_1",1,box_cam1CB);
-    ros::Subscriber quality_sensor1_subscriber_object= nh.subscribe("/ariac/quality_control_sensor_1",1,q_sensor1CB);
+    //ros::Subscriber quality_sensor1_subscriber_object= nh.subscribe("/ariac/quality_control_sensor_1",1,q_sensor1CB);
     
     // Start competition
     ros::ServiceClient startup_client = nh.serviceClient<std_srvs::Trigger>("/ariac/start_competition"); // service name in " "
@@ -160,7 +160,13 @@ int main(int argc, char** argv) {
         
         ROS_INFO("Identifying name of bad part...");
         
-        
+        //compare coordinates of orphaned parts with coordinates of bad part
+        	if (orphan_models_wrt_world[0].pose.position.x > current_part.pose.pose.position.x - 0.01 || orphan_models_wrt_world[0].pose.position.x < current_part.pose.pose.position.x + 0.01) {
+        		if (orphan_models_wrt_world[0].pose.position.y > current_part.pose.pose.position.y - 0.01 || orphan_models_wrt_world[0].pose.position.y < current_part.pose.pose.position.y + 0.01) {
+        			ROS_INFO_STREAM("The bad part is: "<<orphan_models_wrt_world[0].type);
+        		}
+        	}
+              
         cout<<"enter 1 to attempt to remove bad part: "; //poor-man's breakpoint
         cin>>ans;  
         
