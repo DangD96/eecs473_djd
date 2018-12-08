@@ -52,18 +52,6 @@ int main(int argc, char** argv) {
     ros::NodeHandle nh; // create a node handle; need to pass this to the class constructor
     int ans;
     unsigned char box_location_code = inventory_msgs::Part::QUALITY_SENSOR_1;
-
-	// Start competition
-    ros::ServiceClient startup_client = nh.serviceClient<std_srvs::Trigger>("/ariac/start_competition"); // service name in " "
-    std_srvs::Trigger startup_srv;
-	startup_client.call(startup_srv);
-	startup_srv.response.success=false;	
-	while(!startup_srv.response.success) {
-		ROS_WARN("Not successful starting competition yet...");
-		startup_client.call(startup_srv);
-		ros::Duration(0.5).sleep();
-	}
-	ROS_INFO("Successfully started competition");
 	
     ROS_INFO("instantiating a RobotBehaviorInterface");
     RobotBehaviorInterface robotBehaviorInterface(&nh); //shipmentFiller owns one as well
@@ -87,11 +75,20 @@ int main(int argc, char** argv) {
     geometry_msgs::PoseStamped box_pose_wrt_world; //camera sees box, coordinates are converted to world coords
 
     bool status;
-    int nparts;
-    
-    ROS_WARN("SHOULD START THE COMPETITION HERE...");
-    cout<<"enter  1";
-    cin>>ans;
+    int nparts;  
+
+	// Start competition
+	ros::ServiceClient startup_client = nh.serviceClient<std_srvs::Trigger>("/ariac/start_competition"); // service name in " "
+	std_srvs::Trigger startup_srv;
+	startup_client.call(startup_srv);
+	startup_srv.response.success=false;	
+	while(!startup_srv.response.success) {
+		ROS_WARN("Not successful starting competition yet...");
+		startup_client.call(startup_srv);
+		ros::Duration(0.5).sleep();
+	}
+	ROS_WARN("Successfully started competition");    
+
 
     ros::Subscriber sub = nh.subscribe("ariac/orders", 5, orderCallback);
     ROS_INFO("waiting for order...");
@@ -117,7 +114,10 @@ int main(int argc, char** argv) {
 
 
     //use conveyor action  server for multi-tasking
-    ROS_INFO("getting a box into position: ");
+    //advance box to Q1
+    ROS_INFO("getting a box into position at Q1: ");
+    cout<<"Enter 1: ";
+    cin>>ans;
     int nprint = 0;
     conveyorInterface.move_new_box_to_Q1(); //member function of conveyor interface to move a box to inspection station 1
     while (conveyorInterface.get_box_status() != conveyor_as::conveyorResult::BOX_SEEN_AT_Q1) {
@@ -129,10 +129,49 @@ int main(int argc, char** argv) {
         }
     }
 
-    ROS_WARN("DEBUG: advancing box to Q2, skipping operations at Q1");
-    cout<<"enter 1: ";
+    //update box pose,  if possible      
+    if (boxInspector.get_box_pose_wrt_world(box_pose_wrt_world, CAM1)) {
+        ROS_INFO_STREAM("box seen at: " << box_pose_wrt_world << endl);
+    } else {
+        ROS_WARN("no box seen.  something is wrong! I quit!!");
+        exit(1);
+    }
+
+	// if survive to here, then box is at Q1 inspection station;
+	
+    //compute desired  part poses wrt world, given box location:
+    boxInspector.compute_shipment_poses_wrt_world(g_order.shipments[0], box_pose_wrt_world, desired_models_wrt_world);
+
+    //inspect the box and classify all observed parts
+    boxInspector.update_inspection(desired_models_wrt_world,
+            satisfied_models_wrt_world, misplaced_models_actual_coords_wrt_world,
+            misplaced_models_desired_coords_wrt_world, missing_models_wrt_world,
+            orphan_models_wrt_world, part_indices_missing, part_indices_misplaced,
+            part_indices_precisely_placed, CAM1);
+    nparts = orphan_models_wrt_world.size();
+    ROS_INFO("num orphaned parts seen in box = %d", nparts);
+    for (int i = 0; i < nparts; i++) {
+        ROS_INFO_STREAM("orphaned  parts: " << orphan_models_wrt_world[i] << endl);
+    }	
+
+	if (boxInspector.get_bad_part_Q(current_part, CAM1)) {
+        ROS_INFO("found bad part: ");
+        ROS_INFO_STREAM(current_part << endl);
+		ROS_INFO("removing bad part...");
+        
+        //use the robot action server to acquire and dispose of the specified part in the box (piston rod):
+        
+        //pick it up
+        status = robotBehaviorInterface.pick_part_from_box(current_part);
+        //and discard it:
+        status = robotBehaviorInterface.discard_grasped_part(current_part);       
+    }
+
+
+    //advance box to Q2
+    ROS_INFO("advancing box to Q2...");
+    cout<<"Enter 1: ";
     cin>>ans;
-    //advance the box further!
     conveyorInterface.move_box_Q1_to_Q2(); //member function of conveyor interface to move a box to inspection station 1
     while (conveyorInterface.get_box_status() != conveyor_as::conveyorResult::BOX_SEEN_AT_Q2) {
         ros::spinOnce();
@@ -145,11 +184,8 @@ int main(int argc, char** argv) {
 
     //now at location Q2; specify this for all part destinations in subsequent moves:
     box_location_code = inventory_msgs::Part::QUALITY_SENSOR_2;
-
     
     //update box pose,  if possible      
-    cout << "enter 1 to get box pose at Q2: ";
-    cin>>ans;
     if (boxInspector.get_box_pose_wrt_world(box_pose_wrt_world, CAM2)) {
         ROS_INFO_STREAM("box seen at: " << box_pose_wrt_world << endl);
     } else {
@@ -157,9 +193,9 @@ int main(int argc, char** argv) {
         exit(1);
     }
 
-    // if survive to here, then box is at Q1 inspection station; 
+    // if survive to here, then box is at Q2 inspection station; 
 
-    //compute desired  part poses w/rt world, given box location:
+    //compute desired  part poses wrt world, given box location:
     //void BoxInspector::compute_shipment_poses_wrt_world(osrf_gear::Shipment shipment_wrt_box,
     //    geometry_msgs::PoseStamped box_pose_wrt_world,
     //    vector<osrf_gear::Model> &desired_models_wrt_world)
@@ -182,19 +218,13 @@ int main(int argc, char** argv) {
     if (boxInspector.get_bad_part_Q(current_part, CAM2)) {
         ROS_INFO("found bad part: ");
         ROS_INFO_STREAM(current_part << endl);
-
-        cout << "enter 1 to attempt to remove bad part: "; //poor-man's breakpoint
-        cin>>ans;
+        
+        //use the robot action server to acquire and dispose of the specified part in the box:
+        
+        //pick it up
         status = robotBehaviorInterface.pick_part_from_box(current_part);
         //and discard it:
-        status = robotBehaviorInterface.discard_grasped_part(current_part);
-
-
-
-        //XXX YOU should attempt to remove the defective part here...
-        // see example, line 139, robotBehaviorInterface.pick_part_from_box();
-
-        //use the robot action server to acquire and dispose of the specified part in the box:
+        status = robotBehaviorInterface.discard_grasped_part(current_part);       
     }
 
     //after removing the bad part, re-inspect the box:
@@ -266,7 +296,7 @@ int main(int argc, char** argv) {
 
 
 
-        ROS_INFO("attempting pick...");
+       
         ROS_INFO("attempting to pick part");
         cout << "enter 1:";
         if (!robotBehaviorInterface.pick_part_from_bin(pick_part)) {
