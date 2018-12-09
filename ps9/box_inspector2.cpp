@@ -1,3 +1,5 @@
+// David Dang djd122 12/14/18
+
 //box_inspector.cpp implementation of class/library
 #include <box_inspector/box_inspector2.h>
 //#include "box_inspector_fncs.cpp" //more code, outside this file
@@ -349,7 +351,9 @@ bool BoxInspector2::get_new_snapshot_from_box_cam(int cam_num) {
             break;
         case CAM2:
             while ((!got_new_snapshot2_) && (timer < BOX_INSPECTOR_TIMEOUT)) {
-                ROS_WARN("FIX ME!!!");
+                ros::spinOnce();
+                ros::Duration(dt).sleep();
+                timer += dt;
             }
             if (timer >= BOX_INSPECTOR_TIMEOUT) {
                 ROS_WARN("could not update box2 inspection image!");
@@ -471,7 +475,8 @@ bool BoxInspector2::get_filtered_snapshots_from_box_cam2(osrf_gear::LogicalCamer
             box_inspector_image=box_inspector_image_;
             break;
         case CAM2:
-            ROS_WARN("really should do something here...FIX ME!");
+            //ROS_WARN("really should do something here...FIX ME!");
+			box_inspector_image=box_inspector_image_;
             break;     
         default:
             ROS_WARN("box-inspector: cam_num = %d not recognized",cam_num);
